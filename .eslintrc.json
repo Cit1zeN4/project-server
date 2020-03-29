@@ -2,10 +2,12 @@
   "extends": [
     "airbnb",
     "prettier",
-    "plugin:node/recommended"
+    "plugin:node/recommended",
+    "plugin:security/recommended"
   ],
   "plugins": [
-    "prettier"
+    "prettier",
+    "security"
   ],
   "rules": {
     "prettier/prettier": "warn",
