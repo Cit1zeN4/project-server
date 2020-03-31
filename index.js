@@ -1,17 +1,9 @@
 const express = require('express')
-const Sequelize = require('sequelize')
 const router = require('./src/route/router')
+const db = require('./src/data/database')
 
 const app = express()
 const port = process.env.PORT || 3000
-const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-})
 
 router(app)
 
@@ -19,8 +11,7 @@ app.listen(port, () => {
   console.log(`Server start on port ${port} ...`)
 })
 
-sequelize
-  .authenticate()
+db.authenticate()
   .then(() => {
     console.log('Connection has been established successfully.')
   })
@@ -28,4 +19,13 @@ sequelize
     console.error('Unable to connect to the database:', err)
   })
 
-module.exports = app
+db.sync()
+  .then(() => {
+    console.log('database was successfully synced')
+  })
+  .catch((err) => {
+    console.log('- error \n', err)
+  })
+
+module.exports.app = app
+module.exports.sequelize = db

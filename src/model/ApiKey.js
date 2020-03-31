@@ -1,23 +1,11 @@
-class ApiKey {
-  async getAll() {
-    // empty
-  }
+const Sequelize = require('sequelize')
+const db = require('../data/database')
 
-  async exist(key) {
-    // empty
-  }
+const ApiKeyModel = db.define('apiKey', {
+  key: {
+    type: Sequelize.STRING(16),
+    primaryKey: true,
+  },
+})
 
-  async create() {
-    // empty
-  }
-
-  async update(oldKey, newKey) {
-    // empty
-  }
-
-  async delete(key) {
-    // empty
-  }
-}
-
-module.exports = ApiKey
+module.exports = ApiKeyModel

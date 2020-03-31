@@ -1,8 +1,8 @@
 const express = require('express')
-const apiKey = require('../middleware/apiKey')
+const apiKeyValidate = require('../middleware/apiKeyValidate')
 
 const router = express.Router()
 
-router.use('/:key', apiKey)
+router.use('/:key', apiKeyValidate)
 
 module.exports = router
