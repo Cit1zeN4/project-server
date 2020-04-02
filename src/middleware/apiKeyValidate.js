@@ -1,4 +1,4 @@
-const apiKey = require('../model/ApiKey')
+const apiKey = require('../model/db/ApiKey')
 
 function apiKeyValidate(req, res, next) {
   const { key } = req.params
