@@ -1,8 +1,7 @@
 const Sequelize = require('sequelize')
 const db = require('../../db/database')
-
-// TODO: Add role implementation
-// TODO: Add addContacts implementation
+const Role = require('./Role')
+const AdditionalContact = require('./AdditionalContact')
 
 const User = db.define(
   'user',
@@ -33,9 +32,6 @@ const User = db.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
-    role: {
-      // empty
-    },
     photoLink: {
       type: Sequelize.STRING,
       allowNull: true,
@@ -45,5 +41,10 @@ const User = db.define(
     timestamps: false,
   }
 )
+
+Role.hasOne(User)
+User.belongsTo(Role)
+User.belongsToMany(AdditionalContact, { through: 'user_additionalContact' })
+AdditionalContact.belongsToMany(User, { through: 'user_additionalContact' })
 
 module.exports = User
