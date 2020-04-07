@@ -1,9 +1,9 @@
 const express = require('express')
-const api = require('./api')
+const user = require('./user')
 const error = require('../middleware/errorHandle')
 
 module.exports = (app) => {
   app.use('/public', express.static('public'))
-  app.use('/api', api)
+  app.use('/users', user)
   app.use(error)
 }

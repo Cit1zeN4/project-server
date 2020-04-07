@@ -1,4 +1,3 @@
-require('./ApiKey')
 require('./Role')
 require('./User')
 require('./AdditionalContact')
