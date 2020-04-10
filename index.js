@@ -24,11 +24,7 @@ db.authenticate()
 db.sync()
   .then(() => {
     console.log('database was successfully synced')
-    console.log(this.sequelize)
   })
   .catch((err) => {
     console.log('- error \n', err)
   })
-
-module.exports.app = app
-module.exports.sequelize = db

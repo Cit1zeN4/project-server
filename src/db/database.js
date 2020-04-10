@@ -7,6 +7,9 @@ const devDB = {
   username: process.env.DEV_DB_USER,
   password: process.env.DEV_DB_PASS,
   database: process.env.DEV_DB_NAME,
+  define: {
+    timestamps: false,
+  },
 }
 
 module.exports = new Sequelize(devDB)
