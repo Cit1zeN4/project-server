@@ -9,11 +9,11 @@ const router = express.Router()
 router.get('/', (req, res) => {
   User.findAll()
     .then((users) => {
-      if (users.length !== 0) res.status(200).send(users)
-      else res.status(404).json({ message: `can't found users` })
+      if (users.length !== 0) res.status(200).json(users)
+      else res.status(404).json({ message: `Can't found users` })
     })
     .catch((err) => {
-      res.status(500).send(err)
+      res.status(500).json({ error: err.name, message: err.message })
     })
 })
 
@@ -25,11 +25,11 @@ router.get('/:id', (req, res) => {
       if (user === null)
         res
           .status(404)
-          .json({ message: `Can't find role with id: ${req.body.roleId}` })
+          .json({ message: `Can't find user with id: ${req.params.id}` })
       res.status(200).json(user)
     })
     .catch((err) => {
-      res.status(500).json(`${err.name}: ${err.message}`)
+      res.status(500).json({ error: err.name, message: err.message })
     })
 })
 
@@ -64,7 +64,7 @@ router.post('/', (req, res) => {
       })
     })
     .catch((err) => {
-      res.status(500).json(`${err.name}: ${err.message}`)
+      res.status(500).json({ error: err.name, message: err.message })
     })
 })
 
@@ -84,7 +84,7 @@ router.delete('/:id', (req, res) => {
           .json({ message: `Can't found user with id: ${req.params.id}` })
     })
     .catch((err) => {
-      res.status(500).json(`${err.name}: ${err.message}`)
+      res.status(500).json({ error: err.name, message: err.message })
     })
 })
 
@@ -102,7 +102,7 @@ router.put('/:id', (req, res) => {
         res.json(result)
       })
       .catch((err) => {
-        res.status(500).json(`${err.name}: ${err.message}`)
+        res.status(500).json({ error: err.name, message: err.message })
       })
   })
 })

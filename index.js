@@ -6,6 +6,7 @@ require('./src/model/db/importModels')
 
 const app = express()
 const port = process.env.PORT || 3000
+process.env.SERVER_DIR = __dirname
 
 router(app)
 

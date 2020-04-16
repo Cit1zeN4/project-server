@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": ">=11.14.0"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon --watch src --inspect",
@@ -42,6 +45,8 @@
     "express-jwt": "^5.3.1",
     "express-jwt-authz": "^2.3.1",
     "jwks-rsa": "^1.7.0",
+    "mime": "^2.4.4",
+    "multer": "^1.4.2",
     "pg": "^7.18.2",
     "pg-hstore": "^2.3.3",
     "sequelize": "^5.21.5"
