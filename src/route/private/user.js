@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
   User.findAll()
     .then((users) => {
       if (users.length !== 0) res.status(200).json(users)
-      else res.status(404).json({ message: `Can't found users` })
+      else res.status(404).json({ message: `Can't find users` })
     })
     .catch((err) => {
       res.status(500).json({ error: err.name, message: err.message })
@@ -34,6 +34,7 @@ router.get('/:id', (req, res) => {
 })
 
 // POST /private/users/
+// TODO: Add password hashing
 
 router.post('/', (req, res) => {
   Role.findByPk(req.body.roleId)
@@ -81,7 +82,7 @@ router.delete('/:id', (req, res) => {
       else
         res
           .status(404)
-          .json({ message: `Can't found user with id: ${req.params.id}` })
+          .json({ message: `Can't find user with id: ${req.params.id}` })
     })
     .catch((err) => {
       res.status(500).json({ error: err.name, message: err.message })
@@ -99,7 +100,7 @@ router.put('/:id', (req, res) => {
     user
       .update(req.body)
       .then((result) => {
-        res.json(result)
+        res.json({ message: `User was updated successfully`, user: result })
       })
       .catch((err) => {
         res.status(500).json({ error: err.name, message: err.message })
