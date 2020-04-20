@@ -13,16 +13,17 @@ const Task = db.define('task', {
     type: Sequelize.STRING,
     allowNull: true,
   },
-  StartDate: {
+  startDate: {
     type: Sequelize.DATEONLY,
     allowNull: true,
   },
-  EndDate: {
+  endDate: {
     type: Sequelize.DATEONLY,
     allowNull: true,
   },
 })
 
+Task.belongsTo(User, { as: 'owner' })
 User.belongsToMany(Task, { through: 'task_user' })
 Task.belongsToMany(User, { through: 'task_user' })
 

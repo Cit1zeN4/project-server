@@ -39,8 +39,8 @@ router.post('/', (req, res) => {
     projectName: req.body.projectName,
     projectDescription: req.body.projectDescription,
     projectBudget: req.body.projectBudget,
+    managerId: req.body.managerId,
   })
-  // Set other relative fields by project.Set(key, value)
   project
     .save()
     .then((proj) => {
