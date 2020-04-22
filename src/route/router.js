@@ -12,9 +12,10 @@ module.exports = (app) => {
   app.use(bodyParser.json())
   app.use(bodyParser.raw())
   app.use('/public/files', express.static('public'))
-  app.use('/private/users', checkJwt, user)
-  app.use('/private/files', checkJwt, files)
-  app.use('/private/project', checkJwt, project)
-  app.use('/private/task', checkJwt, task)
+  // Return user authentication 'checkJwt'
+  app.use('/private/users', user)
+  app.use('/private/files', files)
+  app.use('/private/project', project)
+  app.use('/private/task', task)
   app.use(error)
 }

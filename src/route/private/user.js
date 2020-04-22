@@ -43,26 +43,25 @@ router.post('/', (req, res) => {
         res
           .status(404)
           .json({ message: `Can't find role with id: ${req.body.roleId}` })
-      return role
-    })
-    .then(async (role) => {
-      const user = await User.build({
+
+      User.create({
         firstName: req.body.firstName,
         surname: req.body.surname,
         middleName: req.body.middleName,
         email: req.body.email,
         password: req.body.password,
         photoLink: req.body.photoLink,
+        roleId: role.id,
       })
-      user.set('roleId', role.id)
-      user.save()
-      return user
-    })
-    .then((user) => {
-      res.json({
-        message: 'User was added successfully',
-        user,
-      })
+        .then((user) => {
+          res.json({
+            message: 'User was added successfully',
+            user,
+          })
+        })
+        .catch((err) => {
+          res.status(500).json({ error: err.name, message: err.message })
+        })
     })
     .catch((err) => {
       res.status(500).json({ error: err.name, message: err.message })
