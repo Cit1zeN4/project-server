@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize')
+require('dotenv').config()
 
 const devDB = {
   dialect: process.env.DEV_DB_DIALECT,

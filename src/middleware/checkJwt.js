@@ -1,22 +1,12 @@
-const jwt = require('express-jwt')
-const jwksRsa = require('jwks-rsa')
+const jwt = require('jsonwebtoken')
 
-// Authentication middleware. When used, the
-// Access Token must exist and be verified against
-// the Auth0 JSON Web Key Set
-module.exports = jwt({
-  // Dynamically provide a signing key
-  // based on the kid in the header and
-  // the signing keys provided by the JWKS endpoint.
-  secret: jwksRsa.expressJwtSecret({
-    cache: true,
-    rateLimit: true,
-    jwksRequestsPerMinute: 5,
-    jwksUri: process.env.DEV_API_JWKS_URI,
-  }),
-
-  // Validate the audience and the issuer.
-  audience: process.env.DEV_API_IDENTIFIER,
-  issuer: process.env.DEV_API_ISSUER,
-  algorithms: ['RS256'],
-})
+module.exports = (req, res, next) => {
+  const token = req.header('Access-token')
+  if (!token) res.status(401).json({ message: 'Access denied' })
+  try {
+    const verify = jwt.verify(token, process.env.JWT_SECRET)
+    next()
+  } catch (err) {
+    res.status(400).json({ message: `Invalid token` })
+  }
+}
