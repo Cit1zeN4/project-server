@@ -7,15 +7,15 @@ const router = express.Router()
 
 // GET /private/users/
 
-router.get('/', (req, res) => {
-  User.findAll()
-    .then((users) => {
-      if (users.length !== 0) res.status(200).json(users)
-      else res.status(404).json({ message: `Can't find users` })
-    })
-    .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
-    })
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.findAll()
+    if (users.length === 0)
+      res.status(404).json({ message: `Can't find users` })
+    res.json(users)
+  } catch (err) {
+    res.status(500).json(err)
+  }
 })
 
 // GET /private/users/:id

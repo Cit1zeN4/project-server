@@ -1,5 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const userAgent = require('express-useragent')
 const user = require('./private/user')
 const files = require('./private/files')
 const project = require('./private/project')
@@ -12,9 +13,9 @@ module.exports = (app) => {
   app.use(bodyParser.urlencoded())
   app.use(bodyParser.json())
   app.use(bodyParser.raw())
+  app.use(userAgent.express())
   app.use('/public/files', express.static('public'))
   app.use('/public/login', login)
-  // Return user authentication 'checkJwt'
   app.use('/private/users', checkJwt, user)
   app.use('/private/files', checkJwt, files)
   app.use('/private/project', checkJwt, project)
