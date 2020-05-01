@@ -3,7 +3,7 @@ const router = require('./src/route/router')
 const db = require('./src/db/database')
 require('dotenv').config()
 // Import all models to the cache before the database is synced.
-require('./src/model/db/importModels')
+require('./src/model/importModels')
 
 const app = express()
 const port = process.env.PORT || 3000

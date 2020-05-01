@@ -1,6 +1,6 @@
 const express = require('express')
-const Task = require('../../model/db/Task')
-const User = require('../../model/db/User')
+const Task = require('../../model/Task')
+const User = require('../../model/User')
 
 const router = express.Router()
 

@@ -3,7 +3,7 @@ const Joi = require('@hapi/joi')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const hash = require('object-hash')
-const User = require('../../model/db/User')
+const User = require('../../model/User')
 
 const router = express.Router()
 const schema = Joi.object({
@@ -11,7 +11,9 @@ const schema = Joi.object({
   password: Joi.string().min(6).required(),
 })
 
-router.post('/', async (req, res) => {
+// POST api/auth/login
+
+router.post('/login', async (req, res) => {
   try {
     const validate = schema.validate(req.body)
 
@@ -31,10 +33,12 @@ router.post('/', async (req, res) => {
 
     if (!compare)
       res.status(400).json({ message: `Incorrect email or password` })
+
     // Creating JWT
     const context = hash.sha1(req.useragent)
     const payload = { id: user.id, context }
     const token = jwt.sign(payload, process.env.JWT_SECRET)
+
     res.json({ message: 'Logged in', token })
   } catch (err) {
     res.status(500).json(err.message)

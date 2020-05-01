@@ -1,6 +1,6 @@
 const express = require('express')
-const Project = require('../../model/db/Project')
-const User = require('../../model/db/User')
+const Project = require('../../model/Project')
+const User = require('../../model/User')
 
 const router = express.Router()
 

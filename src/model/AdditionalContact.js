@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize')
-const db = require('../../db/database')
+const db = require('../db/database')
 const ContactType = require('./ContactType')
 
 const AdditionalContact = db.define('additionalContact', {

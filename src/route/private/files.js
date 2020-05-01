@@ -5,7 +5,7 @@ const path = require('path')
 const multer = require('multer')
 const mime = require('mime')
 const storage = require('../../config/multerStorage')
-const File = require('../../model/db/File')
+const File = require('../../model/File')
 
 const router = express.Router()
 const upload = multer({ storage: storage })
