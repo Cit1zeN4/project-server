@@ -7,14 +7,15 @@ const router = express.Router()
 
 // GET /private/users/
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const users = await User.findAll()
     if (users.length === 0)
       res.status(404).json({ message: `Can't find users` })
     res.json(users)
   } catch (err) {
-    res.status(500).json(err)
+    // res.status(500).json(err)
+    next(err)
   }
 })
 

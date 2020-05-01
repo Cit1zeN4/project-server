@@ -7,5 +7,6 @@ require('./Project')
 require('./ProjectRole')
 require('./UserProject')
 require('./Task')
+require('./Session')
 
 module.exports = undefined
