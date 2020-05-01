@@ -5,10 +5,7 @@
     "plugin:node/recommended",
     "plugin:security/recommended"
   ],
-  "plugins": [
-    "prettier",
-    "security"
-  ],
+  "plugins": ["prettier", "security"],
   "rules": {
     "prettier/prettier": "warn",
     "no-unused-vars": "warn",
@@ -16,6 +13,7 @@
     "func-names": "off",
     "no-process-exit": "off",
     "object-shorthand": "off",
-    "class-methods-use-this": "off"
+    "class-methods-use-this": "off",
+    "consistent-return": "off"
   }
 }

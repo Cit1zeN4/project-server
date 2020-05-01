@@ -35,9 +35,12 @@ router.post('/login', async (req, res) => {
       res.status(400).json({ message: `Incorrect email or password` })
 
     // Creating JWT
+    // TODO: Change context to browser fingerprint
     const context = hash.sha1(req.useragent)
     const payload = { id: user.id, context }
-    const token = jwt.sign(payload, process.env.JWT_SECRET)
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '15m',
+    })
 
     res.json({ message: 'Logged in', token })
   } catch (err) {
