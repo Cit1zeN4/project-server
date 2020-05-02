@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
     // Creating a session end date
     // SESSION_MAX_AGE - the maximum duration of the session
     // For example 5184000000 - 2 months in milliseconds
-    const sessionExp = Date.now() + process.env.SESSION_MAX_AGE
+    const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
     const refreshToken = uuidv4()
 
     await Session.create({
@@ -107,7 +107,7 @@ router.post('/refresh-tokens', async (req, res) => {
       // Creating a session end date
       // SESSION_MAX_AGE - the maximum duration of the session
       // For example 5184000000 - 2 months in milliseconds
-      const sessionExp = Date.now() + process.env.SESSION_MAX_AGE
+      const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
       const newRefreshToken = uuidv4()
 
       await Session.create({
