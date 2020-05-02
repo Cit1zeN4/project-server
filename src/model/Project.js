@@ -14,10 +14,6 @@ const Project = db.define('project', {
     type: Sequelize.TEXT,
     allowNull: true,
   },
-  projectBudget: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-  },
 })
 
 Project.belongsTo(User, { as: 'manager' })
