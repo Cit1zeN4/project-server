@@ -69,7 +69,12 @@ router.post('/login', async (req, res) => {
         httpOnly: true,
         path: '/api/auth/',
       })
-      .json({ message: 'Logged in', token })
+      .cookie('accessToken', token, {
+        maxAge: 900000,
+        httpOnly: true,
+        path: '/api/',
+      })
+      .json({ message: 'Logged in' })
   } catch (err) {
     res.status(500).json(err.message)
   }
