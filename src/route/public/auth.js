@@ -1,26 +1,88 @@
 const express = require('express')
-const Joi = require('@hapi/joi')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
+const Validator = require('../../model/Validator')
 const User = require('../../model/User')
 const Session = require('../../model/Session')
 
 const router = express.Router()
-const schema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
+
+// POST api/auth/signup
+
+router.post('/signup', async (req, res) => {
+  try {
+    const validate = Validator.signup.validate(req.body)
+
+    // Validating data
+    if (validate.error)
+      res.status(400).json({ error: true, message: validate.error.message })
+
+    const user = await User.findOne({
+      where: {
+        email: req.body.email,
+      },
+    })
+
+    if (user)
+      res.status(400).json({
+        error: true,
+        message: `User with email : ${req.body.email} already exist`,
+      })
+
+    // Password hashing
+    const slat = bcrypt.genSaltSync()
+    const hash = bcrypt.hashSync(req.body.password, slat)
+
+    const newUser = await User.create({
+      firstName: req.body.firstName,
+      surname: req.body.firstName,
+      email: req.body.email,
+      password: hash,
+      roleId: 1,
+    })
+
+    // Creating JWT
+    const payload = { id: user.id }
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '15m',
+    })
+
+    // Creating a session end date
+    // SESSION_MAX_AGE - the maximum duration of the session
+    // For example 5184000000 - 2 months in milliseconds
+    const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
+    const refreshToken = uuidv4()
+
+    // TODO: Add fingerprint
+    await Session.create({
+      userId: newUser.id,
+      expiresIn: sessionExp,
+      fingerprint: 'fingerprint',
+      refreshToken,
+    })
+
+    res
+      .cookie('refreshToken', refreshToken, {
+        maxAge: process.env.SESSION_MAX_AGE,
+        httpOnly: true,
+        path: '/api/auth/',
+      })
+      .json({ message: 'Signed Up', token })
+  } catch (err) {
+    res.status(500).json({ error: true, message: err.message })
+  }
 })
 
 // POST api/auth/login
 
 router.post('/login', async (req, res) => {
   try {
-    const validate = schema.validate(req.body)
+    const validate = Validator.login.validate(req.body)
 
     // Validating data
     if (validate.error)
-      res.status(400).json({ message: validate.error.message })
+      res.status(400).json({ error: true, message: validate.error.message })
 
     const user = await User.findOne({
       where: {
@@ -29,13 +91,17 @@ router.post('/login', async (req, res) => {
     })
 
     // User authentication
-    if (user === null)
-      res.status(400).json({ message: `Incorrect email or password` })
+    if (!user)
+      res
+        .status(400)
+        .json({ error: true, message: `Incorrect email or password` })
 
     const compare = bcrypt.compareSync(req.body.password, user.password)
 
     if (!compare)
-      res.status(400).json({ message: `Incorrect email or password` })
+      res
+        .status(400)
+        .json({ error: true, message: `Incorrect email or password` })
 
     // Creating JWT
     const payload = { id: user.id }
@@ -56,6 +122,7 @@ router.post('/login', async (req, res) => {
     const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
     const refreshToken = uuidv4()
 
+    // TODO: Add fingerprint
     await Session.create({
       userId: user.id,
       expiresIn: sessionExp,
@@ -71,7 +138,7 @@ router.post('/login', async (req, res) => {
       })
       .json({ message: 'Logged in', token })
   } catch (err) {
-    res.status(500).json(err.message)
+    res.status(500).json({ error: true, message: err.message })
   }
 })
 
