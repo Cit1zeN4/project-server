@@ -36,7 +36,7 @@ router.get('/:id', (req, res) => {
 })
 
 // POST /private/users/
-// TODO: Add password hashing
+// TODO: the handler needs refactoring
 
 router.post('/', (req, res) => {
   Role.findByPk(req.body.roleId)
