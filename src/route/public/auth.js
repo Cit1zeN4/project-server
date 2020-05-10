@@ -12,7 +12,7 @@ const router = express.Router()
 
 router.post('/signup', async (req, res) => {
   try {
-    const validate = Validator.signup.validate(req.body)
+    const validate = Validator.signup().validate(req.body)
 
     // Validating data
     if (validate.error)
@@ -36,14 +36,14 @@ router.post('/signup', async (req, res) => {
 
     const newUser = await User.create({
       firstName: req.body.firstName,
-      surname: req.body.firstName,
+      surname: req.body.surname,
       email: req.body.email,
       password: hash,
       roleId: 1,
     })
 
     // Creating JWT
-    const payload = { id: user.id }
+    const payload = { id: newUser.id }
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '15m',
     })
@@ -68,7 +68,22 @@ router.post('/signup', async (req, res) => {
         httpOnly: true,
         path: '/api/auth/',
       })
-      .json({ message: 'Signed Up', token })
+      // maxAge: 900000 - 15 minute
+      .cookie('accessToken', token, {
+        maxAge: 900000,
+        httpOnly: true,
+        path: '/api',
+      })
+      .json({
+        message: 'Signed Up',
+        refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
+        accessTokenExpireIn: 900000 + Date.now(),
+        user: {
+          firstName: newUser.firstName,
+          surname: newUser.surname,
+          email: newUser.email,
+        },
+      })
   } catch (err) {
     res.status(500).json({ error: true, message: err.message })
   }
@@ -78,7 +93,7 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const validate = Validator.login.validate(req.body)
+    const validate = Validator.login().validate(req.body)
 
     // Validating data
     if (validate.error)
@@ -136,7 +151,23 @@ router.post('/login', async (req, res) => {
         httpOnly: true,
         path: '/api/auth/',
       })
-      .json({ message: 'Logged in', token })
+      .cookie('accessToken', token, {
+        maxAhe: 900000,
+        httpOnly: true,
+        path: '/api',
+      })
+      .json({
+        message: 'Logged in',
+        refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
+        accessTokenExpireIn: 900000 + Date.now(),
+        user: {
+          firstName: user.firstName,
+          surname: user.surname,
+          middleName: user.middleName,
+          email: user.email,
+          photoLink: user.photoLink,
+        },
+      })
   } catch (err) {
     res.status(500).json({ error: true, message: err.message })
   }
