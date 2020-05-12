@@ -58,7 +58,7 @@ router.post('/signup', async (req, res) => {
     await Session.create({
       userId: newUser.id,
       expiresIn: sessionExp,
-      fingerprint: 'fingerprint',
+      fingerprint: req.fingerprint.hash,
       refreshToken,
     })
 
@@ -141,7 +141,7 @@ router.post('/login', async (req, res) => {
     await Session.create({
       userId: user.id,
       expiresIn: sessionExp,
-      fingerprint: 'fingerprint',
+      fingerprint: req.fingerprint.hash,
       refreshToken,
     })
 
@@ -152,7 +152,7 @@ router.post('/login', async (req, res) => {
         path: '/api/auth/',
       })
       .cookie('accessToken', token, {
-        maxAhe: 900000,
+        maxAge: 900000,
         httpOnly: true,
         path: '/api',
       })
@@ -161,6 +161,7 @@ router.post('/login', async (req, res) => {
         refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
         accessTokenExpireIn: 900000 + Date.now(),
         user: {
+          id: user.id,
           firstName: user.firstName,
           surname: user.surname,
           middleName: user.middleName,
@@ -175,7 +176,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/refresh-tokens', async (req, res) => {
   try {
-    const { fingerprint } = req.body
+    const fingerprint = req.fingerprint.hash
     if (!fingerprint)
       res.status(400).json({ error: true, message: `No fingerprint provided` })
 
@@ -211,7 +212,7 @@ router.post('/refresh-tokens', async (req, res) => {
       await Session.create({
         userId: session.userId,
         expiresIn: sessionExp,
-        fingerprint: 'fingerprint',
+        fingerprint: fingerprint,
         refreshToken: newRefreshToken,
       })
 
@@ -227,11 +228,42 @@ router.post('/refresh-tokens', async (req, res) => {
           httpOnly: true,
           path: '/api/auth/',
         })
-        .json({ message: 'Token was successfully refreshed', token })
+        .cookie('accessToken', token, {
+          maxAge: 900000,
+          httpOnly: true,
+          path: '/api',
+        })
+        .json({ message: 'Token was successfully refreshed' })
     }
   } catch (err) {
     res.status(500).json({ error: true, message: err.message })
   }
+})
+
+router.post('/', async (req, res) => {
+  const { refreshToken, accessToken } = req.cookies
+
+  if (!accessToken && !refreshToken)
+    res.status(400).json({ error: true, message: `No tokens provided` })
+
+  jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      Session.findOne({
+        where: {
+          refreshToken: refreshToken,
+        },
+      }).then((session) => {
+        if (!session)
+          res
+            .status(400)
+            .json({ error: true, message: `User wasn't authenticated` })
+
+        res.json({ message: `User was authenticated` })
+      })
+    } else {
+      res.json({ message: `User was authenticated`, payload: decoded })
+    }
+  })
 })
 
 module.exports = router
