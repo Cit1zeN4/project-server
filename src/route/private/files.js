@@ -12,20 +12,20 @@ const upload = multer({ storage: storage })
 
 // GET /private/files/
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
   File.findAll()
     .then((files) => {
       if (files.length !== 0) res.status(200).json(files)
       else res.status(404).json({ message: `Can't found files` })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // GET /private/files/:id
 
-router.get('/:id', (req, res) => {
+router.get('/:id', (req, res, next) => {
   File.findByPk(req.params.id)
     .then((file) => {
       if (file === null)
@@ -35,13 +35,13 @@ router.get('/:id', (req, res) => {
       res.status(200).json(file)
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // GET /private/files/:id/content
 
-router.get('/:id/content', (req, res) => {
+router.get('/:id/content', (req, res, next) => {
   File.findByPk(req.params.id)
     .then((file) => {
       if (file === null) {
@@ -53,13 +53,13 @@ router.get('/:id/content', (req, res) => {
       }
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // POST /private/files/
 
-router.post('/', upload.single('file'), (req, res) => {
+router.post('/', upload.single('file'), (req, res, next) => {
   File.create({
     fileName: req.file.filename,
     fileType: mime.getExtension(req.file.mimetype),
@@ -69,7 +69,7 @@ router.post('/', upload.single('file'), (req, res) => {
       res.json({ message: `File was uploaded successfully`, file })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
@@ -77,7 +77,7 @@ router.post('/', upload.single('file'), (req, res) => {
 // File content is updated by replacing the old file with a new one.
 // Sorry i'm beginner and i don't know how to do it better ¯\_(ツ)_/¯.
 
-router.put('/:id/content', upload.single('file'), (req, res) => {
+router.put('/:id/content', upload.single('file'), (req, res, next) => {
   File.findByPk(req.params.id).then((file) => {
     if (file === null)
       res
@@ -105,7 +105,7 @@ router.put('/:id/content', upload.single('file'), (req, res) => {
                 path.normalize(`${process.env.SERVER_DIR}/${req.file.path}`)
               )
             ).then(() => {
-              res.status(500).json({ error: err.name, message: err.message })
+              next(err)
             })
           })
       })
@@ -113,10 +113,7 @@ router.put('/:id/content', upload.single('file'), (req, res) => {
         fs.promises
           .unlink(path.normalize(`${process.env.SERVER_DIR}/${req.file.path}`))
           .then(() => {
-            // TODO: Change error
-            res
-              .status(500)
-              .json({ error: 'RestoreError', message: `Can't restore changes` })
+            next(err)
           })
       })
   })
@@ -125,7 +122,7 @@ router.put('/:id/content', upload.single('file'), (req, res) => {
 // PUT /private/files/:id/
 // Update only file name.
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req, res, next) => {
   File.findByPk(req.params.id).then((file) => {
     if (file === null)
       res
@@ -141,14 +138,14 @@ router.put('/:id', (req, res) => {
           .json({ message: 'File name was updated successfully', file: result })
       })
       .catch((err) => {
-        res.status(500).json({ error: err.name, message: err.message })
+        next(err)
       })
   })
 })
 
 // DELETE /private/files/:id
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req, res, next) => {
   File.findByPk(req.params.id).then((file) => {
     if (file === null)
       res
@@ -170,7 +167,7 @@ router.delete('/:id', (req, res) => {
             })
           })
           .catch((err) => {
-            res.status(500).json({ error: err.name, message: err.message })
+            next(err)
           })
       })
       .catch(() => {

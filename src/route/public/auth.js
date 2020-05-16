@@ -5,12 +5,13 @@ const { v4: uuidv4 } = require('uuid')
 const Validator = require('../../model/Validator')
 const User = require('../../model/User')
 const Session = require('../../model/Session')
+const refreshTokenHandler = require('../../script/refreshToken')
 
 const router = express.Router()
 
 // POST api/auth/signup
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req, res, next) => {
   try {
     const validate = Validator.signup().validate(req.body)
 
@@ -66,13 +67,13 @@ router.post('/signup', async (req, res) => {
       .cookie('refreshToken', refreshToken, {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
-        path: '/api/auth/',
+        // path: '/api/auth/',
       })
       // maxAge: 900000 - 15 minute
       .cookie('accessToken', token, {
         maxAge: 900000,
         httpOnly: true,
-        path: '/api',
+        // path: '/api',
       })
       .json({
         message: 'Signed Up',
@@ -85,13 +86,13 @@ router.post('/signup', async (req, res) => {
         },
       })
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
+    next(err)
   }
 })
 
 // POST api/auth/login
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const validate = Validator.login().validate(req.body)
 
@@ -149,12 +150,12 @@ router.post('/login', async (req, res) => {
       .cookie('refreshToken', refreshToken, {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
-        path: '/api/auth/',
+        // path: '/api/auth/',
       })
       .cookie('accessToken', token, {
         maxAge: 900000,
         httpOnly: true,
-        path: '/api',
+        // path: '/api',
       })
       .json({
         message: 'Logged in',
@@ -170,100 +171,51 @@ router.post('/login', async (req, res) => {
         },
       })
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
+    next(err)
   }
 })
 
-router.post('/refresh-tokens', async (req, res) => {
-  try {
-    const fingerprint = req.fingerprint.hash
-    if (!fingerprint)
-      res.status(400).json({ error: true, message: `No fingerprint provided` })
-
-    const { refreshToken } = req.cookies
-    if (!refreshToken)
-      res
-        .status(400)
-        .json({ error: true, message: `No refresh token provided` })
-
-    const session = await Session.findOne({
-      where: {
-        refreshToken: refreshToken,
-      },
-    })
-
-    if (!session)
-      res.status(400).json({ error: true, message: `Can't find session` })
-    else {
-      await session.destroy()
-
-      if (session.fingerprint !== fingerprint)
-        res.status(400).json({ error: true, message: `Incorrect finger print` })
-
-      if (session.expiresIn < Date.now())
-        res.status(400).json({ error: true, message: `Refresh token expired` })
-
-      // Creating a session end date
-      // SESSION_MAX_AGE - the maximum duration of the session
-      // For example 5184000000 - 2 months in milliseconds
-      const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
-      const newRefreshToken = uuidv4()
-
-      await Session.create({
-        userId: session.userId,
-        expiresIn: sessionExp,
-        fingerprint: fingerprint,
-        refreshToken: newRefreshToken,
-      })
-
-      // Creating JWT
-      const payload = { id: session.userId }
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: '15m',
-      })
-
-      res
-        .cookie('refreshToken', refreshToken, {
-          maxAge: process.env.SESSION_MAX_AGE,
-          httpOnly: true,
-          path: '/api/auth/',
-        })
-        .cookie('accessToken', token, {
-          maxAge: 900000,
-          httpOnly: true,
-          path: '/api',
-        })
-        .json({ message: 'Token was successfully refreshed' })
-    }
-  } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
-  }
+router.post('/refresh-tokens', (req, res, next) => {
+  refreshTokenHandler(req, res, next, {
+    message: 'Token was successfully refreshed',
+  })
 })
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   const { refreshToken, accessToken } = req.cookies
 
-  if (!accessToken && !refreshToken)
-    res.status(400).json({ error: true, message: `No tokens provided` })
+  try {
+    if (!accessToken && !refreshToken)
+      res.status(400).json({ error: true, message: `No tokens provided` })
 
-  jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      Session.findOne({
-        where: {
-          refreshToken: refreshToken,
-        },
-      }).then((session) => {
-        if (!session)
-          res
-            .status(400)
-            .json({ error: true, message: `User wasn't authenticated` })
+    jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        Session.findOne({
+          where: {
+            refreshToken: refreshToken,
+          },
+          include: User,
+          attributes: { exclude: ['password'] },
+        }).then((session) => {
+          if (!session)
+            res
+              .status(400)
+              .json({ error: true, message: `User wasn't authenticated` })
 
-        res.json({ message: `User was authenticated` })
-      })
-    } else {
-      res.json({ message: `User was authenticated`, payload: decoded })
-    }
-  })
+          refreshTokenHandler(req, res, next, session)
+        })
+      } else {
+        User.findOne({
+          where: { id: decoded.id },
+          attributes: { exclude: ['password'] },
+        }).then((user) => {
+          res.json({ message: `User was authenticated`, user })
+        })
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
 module.exports = router

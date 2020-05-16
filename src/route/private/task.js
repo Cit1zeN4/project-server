@@ -6,20 +6,20 @@ const router = express.Router()
 
 // GET /private/task/
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
   Task.findAll()
     .then((tasks) => {
       if (tasks.length !== 0) res.json(tasks)
       else res.status(404).json({ message: `Can't find tasks` })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // GET /private/task/:id
 
-router.get('/:id', (req, res) => {
+router.get('/:id', (req, res, next) => {
   Task.findByPk(req.params.id)
     .then((task) => {
       if (task === null)
@@ -30,13 +30,13 @@ router.get('/:id', (req, res) => {
       res.json(task)
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // POST /private/task/
 
-router.post('/', (req, res) => {
+router.post('/', (req, res, next) => {
   const task = Task.build({
     taskName: req.body.taskName,
     taskContent: req.body.taskContent,
@@ -51,13 +51,13 @@ router.post('/', (req, res) => {
       res.json({ message: `Task was created successfully`, task: result })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // PUT /private/task/:id
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req, res, next) => {
   Task.findByPk(req.params.id)
     .then((task) => {
       if (task === null)
@@ -74,13 +74,13 @@ router.put('/:id', (req, res) => {
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // DELETE /private/task/:id
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req, res, next) => {
   Task.destroy({
     where: {
       id: req.params.id,
@@ -94,13 +94,13 @@ router.delete('/:id', (req, res) => {
           .json({ message: `Can't find task with id: ${req.params.id}` })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // GET /private/task/:taskId/users/
 
-router.get('/:taskId/users', (req, res) => {
+router.get('/:taskId/users', (req, res, next) => {
   Task.findByPk(req.params.taskId)
     .then((task) => {
       if (task === null)
@@ -117,13 +117,13 @@ router.get('/:taskId/users', (req, res) => {
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // POST /private/task/:taskId/users/:userId
 
-router.post('/:taskId/users/:userId', (req, res) => {
+router.post('/:taskId/users/:userId', (req, res, next) => {
   Task.findByPk(req.params.taskId)
     .then((task) => {
       if (task === null)
@@ -142,21 +142,21 @@ router.post('/:taskId/users/:userId', (req, res) => {
               res.json(result)
             })
             .catch((err) => {
-              res.status(500).json({ error: err.name, message: err.message })
+              next(err)
             })
         })
         .catch((err) => {
-          res.status(500).json({ error: err.name, message: err.message })
+          next(err)
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // DELETE /private/task/:taskId/users/:userId
 
-router.delete('/:taskId/users/:userId', (req, res) => {
+router.delete('/:taskId/users/:userId', (req, res, next) => {
   Task.findByPk(req.params.taskId)
     .then((task) => {
       if (task === null)
@@ -182,15 +182,15 @@ router.delete('/:taskId/users/:userId', (req, res) => {
               res.json({ message: `User was deleted from task successfully` })
             })
             .catch((err) => {
-              res.status(500).json({ error: err.name, message: err.message })
+              next(err)
             })
         })
         .catch((err) => {
-          res.status(500).json({ error: err.name, message: err.message })
+          next(err)
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 

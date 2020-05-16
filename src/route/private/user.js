@@ -14,14 +14,13 @@ router.get('/', async (req, res, next) => {
       res.status(404).json({ message: `Can't find users` })
     res.json(users)
   } catch (err) {
-    // res.status(500).json(err)
     next(err)
   }
 })
 
 // GET /private/users/:id
 
-router.get('/:id', (req, res) => {
+router.get('/:id', (req, res, next) => {
   User.findByPk(req.params.id)
     .then((user) => {
       if (user === null)
@@ -31,14 +30,14 @@ router.get('/:id', (req, res) => {
       res.status(200).json(user)
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // POST /private/users/
 // TODO: the handler needs refactoring
 
-router.post('/', (req, res) => {
+router.post('/', (req, res, next) => {
   Role.findByPk(req.body.roleId)
     .then((role) => {
       if (role === null)
@@ -65,17 +64,17 @@ router.post('/', (req, res) => {
           })
         })
         .catch((err) => {
-          res.status(500).json({ error: err.name, message: err.message })
+          next(err)
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // DELETE /private/users/:id
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req, res, next) => {
   User.destroy({
     where: {
       id: req.params.id,
@@ -89,13 +88,13 @@ router.delete('/:id', (req, res) => {
           .json({ message: `Can't find user with id: ${req.params.id}` })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // PUT /private/users/:id
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req, res, next) => {
   User.findByPk(req.params.id).then((user) => {
     if (user === null)
       res
@@ -107,7 +106,7 @@ router.put('/:id', (req, res) => {
         res.json({ message: `User was updated successfully`, user: result })
       })
       .catch((err) => {
-        res.status(500).json({ error: err.name, message: err.message })
+        next(err)
       })
   })
 })
