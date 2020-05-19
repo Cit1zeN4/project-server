@@ -9,6 +9,7 @@ module.exports.roleDefault = async () => {
       transaction = await db.transaction()
       await Role.create({ id: 1, roleName: 'User' }, transaction)
       await Role.create({ id: 2, roleName: 'Admin' }, transaction)
+      await Role.create({ id: 3, roleName: 'Manager' }, transaction)
 
       await transaction.commit()
       console.log('Added default values in Role table')

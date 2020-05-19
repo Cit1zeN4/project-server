@@ -150,12 +150,10 @@ router.post('/login', async (req, res, next) => {
       .cookie('refreshToken', refreshToken, {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
-        // path: '/api/auth/',
       })
       .cookie('accessToken', token, {
         maxAge: 900000,
         httpOnly: true,
-        // path: '/api',
       })
       .json({
         message: 'Logged in',
@@ -213,6 +211,36 @@ router.post('/', async (req, res, next) => {
         })
       }
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/logout', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies
+    if (!refreshToken)
+      res.status(400).json({
+        error: 'NoTokenProvided',
+        message: 'No refresh token provided',
+      })
+
+    await Session.destroy({
+      where: {
+        refreshToken,
+      },
+    })
+
+    res
+      .clearCookie('accessToken', {
+        maxAge: 900000,
+        httpOnly: true,
+      })
+      .clearCookie('refreshToken', {
+        maxAge: process.env.SESSION_MAX_AGE,
+        httpOnly: true,
+      })
+      .json({ message: `Log out` })
   } catch (err) {
     next(err)
   }
