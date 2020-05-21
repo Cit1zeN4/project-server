@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken')
 const { v4: uuidv4 } = require('uuid')
 const Session = require('../model/Session')
+const rolesConfig = require('../config/rolesConfig')
+const User = require('../model/User')
 
 module.exports = async (req, res, next, data) => {
   try {
@@ -18,6 +20,7 @@ module.exports = async (req, res, next, data) => {
       where: {
         refreshToken: refreshToken,
       },
+      include: User,
     })
 
     if (!session)
@@ -38,14 +41,17 @@ module.exports = async (req, res, next, data) => {
       const newRefreshToken = uuidv4()
 
       await Session.create({
-        userId: session.userId,
+        userId: session.user.id,
         expiresIn: sessionExp,
         fingerprint: fingerprint,
         refreshToken: newRefreshToken,
       })
 
       // Creating JWT
-      const payload = { id: session.userId }
+      const payload = {
+        id: session.userId,
+        role: rolesConfig.find((role) => role.id === session.user.roleId).name,
+      }
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '15m',
       })
@@ -54,12 +60,12 @@ module.exports = async (req, res, next, data) => {
         .cookie('refreshToken', newRefreshToken, {
           maxAge: process.env.SESSION_MAX_AGE,
           httpOnly: true,
-          // path: '/api/auth/',
+          path: '/api/auth/',
         })
         .cookie('accessToken', token, {
           maxAge: 900000,
           httpOnly: true,
-          // path: '/api',
+          path: '/api',
         })
         .json(data)
     }

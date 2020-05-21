@@ -6,6 +6,7 @@ const Validator = require('../../model/Validator')
 const User = require('../../model/User')
 const Session = require('../../model/Session')
 const refreshTokenHandler = require('../../script/refreshToken')
+const rolesConfig = require('../../config/rolesConfig')
 
 const router = express.Router()
 
@@ -40,11 +41,14 @@ router.post('/signup', async (req, res, next) => {
       surname: req.body.surname,
       email: req.body.email,
       password: hash,
-      roleId: 1,
+      roleId: rolesConfig.find((role) => role.name === 'user').id,
     })
 
     // Creating JWT
-    const payload = { id: newUser.id }
+    const payload = {
+      id: newUser.id,
+      role: rolesConfig.find((role) => role.name === 'user').name,
+    }
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '15m',
     })
@@ -67,22 +71,25 @@ router.post('/signup', async (req, res, next) => {
       .cookie('refreshToken', refreshToken, {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
-        // path: '/api/auth/',
+        path: '/api/auth/',
       })
       // maxAge: 900000 - 15 minute
       .cookie('accessToken', token, {
         maxAge: 900000,
         httpOnly: true,
-        // path: '/api',
+        path: '/api',
       })
       .json({
         message: 'Signed Up',
         refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
         accessTokenExpireIn: 900000 + Date.now(),
         user: {
+          id: newUser.id,
           firstName: newUser.firstName,
           surname: newUser.surname,
+          middleName: newUser.middleName,
           email: newUser.email,
+          photoLink: newUser.photoLink,
         },
       })
   } catch (err) {
@@ -120,7 +127,10 @@ router.post('/login', async (req, res, next) => {
         .json({ error: true, message: `Incorrect email or password` })
 
     // Creating JWT
-    const payload = { id: user.id }
+    const payload = {
+      id: user.id,
+      role: rolesConfig.find((role) => role.id === user.roleId).name,
+    }
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '15m',
     })
@@ -150,10 +160,13 @@ router.post('/login', async (req, res, next) => {
       .cookie('refreshToken', refreshToken, {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
+        path: '/api/auth/',
       })
+      // maxAge: 900000 - 15 minute
       .cookie('accessToken', token, {
         maxAge: 900000,
         httpOnly: true,
+        path: '/api',
       })
       .json({
         message: 'Logged in',
@@ -207,7 +220,16 @@ router.post('/', async (req, res, next) => {
           where: { id: decoded.id },
           attributes: { exclude: ['password'] },
         }).then((user) => {
-          res.json({ message: `User was authenticated`, user })
+          const newUser = {
+            id: user.id,
+            firstName: user.firstName,
+            surname: user.surname,
+            middleName: user.middleName,
+            email: user.email,
+            photoLink: user.photoLink,
+          }
+
+          res.json({ message: `User was authenticated`, user: newUser })
         })
       }
     })
@@ -235,10 +257,12 @@ router.post('/logout', async (req, res, next) => {
       .clearCookie('accessToken', {
         maxAge: 900000,
         httpOnly: true,
+        path: '/api',
       })
       .clearCookie('refreshToken', {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
+        path: '/api/auth/',
       })
       .json({ message: `Log out` })
   } catch (err) {
