@@ -3,8 +3,9 @@ const { v4: uuidv4 } = require('uuid')
 const Session = require('../model/Session')
 const rolesConfig = require('../config/rolesConfig')
 const User = require('../model/User')
+const { response } = require('./baseUserResponse')
 
-module.exports = async (req, res, next, data) => {
+module.exports = async (req, res, next, message, user) => {
   try {
     const fingerprint = req.fingerprint.hash
     if (!fingerprint)
@@ -21,6 +22,7 @@ module.exports = async (req, res, next, data) => {
         refreshToken: refreshToken,
       },
       include: User,
+      attributes: { exclude: ['password'] },
     })
 
     if (!session)
@@ -56,18 +58,12 @@ module.exports = async (req, res, next, data) => {
         expiresIn: '15m',
       })
 
-      res
-        .cookie('refreshToken', newRefreshToken, {
-          maxAge: process.env.SESSION_MAX_AGE,
-          httpOnly: true,
-          path: '/api/auth/',
-        })
-        .cookie('accessToken', token, {
-          maxAge: 900000,
-          httpOnly: true,
-          path: '/api',
-        })
-        .json(data)
+      response(
+        res,
+        { access: token, refresh: refreshToken },
+        message,
+        user || session.user
+      )
     }
   } catch (err) {
     next(err)

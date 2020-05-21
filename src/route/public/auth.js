@@ -7,6 +7,7 @@ const User = require('../../model/User')
 const Session = require('../../model/Session')
 const refreshTokenHandler = require('../../script/refreshToken')
 const rolesConfig = require('../../config/rolesConfig')
+const { userHandler, response } = require('../../script/baseUserResponse')
 
 const router = express.Router()
 
@@ -67,31 +68,12 @@ router.post('/signup', async (req, res, next) => {
       refreshToken,
     })
 
-    res
-      .cookie('refreshToken', refreshToken, {
-        maxAge: process.env.SESSION_MAX_AGE,
-        httpOnly: true,
-        path: '/api/auth/',
-      })
-      // maxAge: 900000 - 15 minute
-      .cookie('accessToken', token, {
-        maxAge: 900000,
-        httpOnly: true,
-        path: '/api',
-      })
-      .json({
-        message: 'Signed Up',
-        refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
-        accessTokenExpireIn: 900000 + Date.now(),
-        user: {
-          id: newUser.id,
-          firstName: newUser.firstName,
-          surname: newUser.surname,
-          middleName: newUser.middleName,
-          email: newUser.email,
-          photoLink: newUser.photoLink,
-        },
-      })
+    response(
+      res,
+      { access: token, refresh: refreshToken },
+      'Signed Up',
+      newUser
+    )
   } catch (err) {
     next(err)
   }
@@ -156,40 +138,14 @@ router.post('/login', async (req, res, next) => {
       refreshToken,
     })
 
-    res
-      .cookie('refreshToken', refreshToken, {
-        maxAge: process.env.SESSION_MAX_AGE,
-        httpOnly: true,
-        path: '/api/auth/',
-      })
-      // maxAge: 900000 - 15 minute
-      .cookie('accessToken', token, {
-        maxAge: 900000,
-        httpOnly: true,
-        path: '/api',
-      })
-      .json({
-        message: 'Logged in',
-        refreshTokenExpireIn: Number(process.env.SESSION_MAX_AGE) + Date.now(),
-        accessTokenExpireIn: 900000 + Date.now(),
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          surname: user.surname,
-          middleName: user.middleName,
-          email: user.email,
-          photoLink: user.photoLink,
-        },
-      })
+    response(res, { access: token, refresh: refreshToken }, 'Logged in', user)
   } catch (err) {
     next(err)
   }
 })
 
 router.post('/refresh-tokens', (req, res, next) => {
-  refreshTokenHandler(req, res, next, {
-    message: 'Token was successfully refreshed',
-  })
+  refreshTokenHandler(req, res, next, 'Token was refresh')
 })
 
 router.post('/', async (req, res, next) => {
@@ -213,23 +169,23 @@ router.post('/', async (req, res, next) => {
               .status(400)
               .json({ error: true, message: `User wasn't authenticated` })
 
-          refreshTokenHandler(req, res, next, session)
+          refreshTokenHandler(
+            req,
+            res,
+            next,
+            'User was authenticated',
+            session.user
+          )
         })
       } else {
         User.findOne({
           where: { id: decoded.id },
           attributes: { exclude: ['password'] },
         }).then((user) => {
-          const newUser = {
-            id: user.id,
-            firstName: user.firstName,
-            surname: user.surname,
-            middleName: user.middleName,
-            email: user.email,
-            photoLink: user.photoLink,
-          }
-
-          res.json({ message: `User was authenticated`, user: newUser })
+          res.json({
+            message: `User was authenticated`,
+            user: userHandler(user),
+          })
         })
       }
     })
