@@ -60,7 +60,7 @@ module.exports = async (req, res, next, message, user) => {
 
       response(
         res,
-        { access: token, refresh: refreshToken },
+        { access: token, refresh: newRefreshToken },
         message,
         user || session.user
       )

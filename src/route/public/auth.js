@@ -157,26 +157,7 @@ router.post('/', async (req, res, next) => {
 
     jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
-        Session.findOne({
-          where: {
-            refreshToken: refreshToken,
-          },
-          include: User,
-          attributes: { exclude: ['password'] },
-        }).then((session) => {
-          if (!session)
-            res
-              .status(400)
-              .json({ error: true, message: `User wasn't authenticated` })
-
-          refreshTokenHandler(
-            req,
-            res,
-            next,
-            'User was authenticated',
-            session.user
-          )
-        })
+        refreshTokenHandler(req, res, next, 'User was authenticated')
       } else {
         User.findOne({
           where: { id: decoded.id },
