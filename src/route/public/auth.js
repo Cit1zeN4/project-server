@@ -144,10 +144,6 @@ router.post('/login', async (req, res, next) => {
   }
 })
 
-router.post('/refresh-tokens', (req, res, next) => {
-  refreshTokenHandler(req, res, next, 'Token was refresh')
-})
-
 router.post('/', async (req, res, next) => {
   const { refreshToken, accessToken } = req.cookies
 
