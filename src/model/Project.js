@@ -14,6 +14,10 @@ const Project = db.define('project', {
     type: Sequelize.TEXT,
     allowNull: true,
   },
+  dueDate: {
+    type: Sequelize.DATE,
+    allowNull: false,
+  },
 })
 
 Project.belongsTo(User, { as: 'manager' })

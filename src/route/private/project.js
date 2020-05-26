@@ -1,12 +1,15 @@
 const express = require('express')
 const Project = require('../../model/Project')
 const User = require('../../model/User')
+const UserProject = require('../../model/UserProject')
+const checkRole = require('../../middleware/checkRole')
+const roles = require('../../config/rolesConfig')
 
 const router = express.Router()
 
 // GET /api/project/
 
-router.get('/', async (req, res, next) => {
+router.get('/', checkRole(roles.map((i) => i.name)), async (req, res, next) => {
   try {
     const projects = await Project.findAll()
 
@@ -19,31 +22,37 @@ router.get('/', async (req, res, next) => {
 
 // GET /api/project/:id
 
-router.get('/:id', async (req, res, next) => {
-  try {
-    const project = await Project.findByPk(req.params.id)
-    if (!project)
-      res
-        .status(404)
-        .json({ message: `Can't find project with id: ${req.params.id}` })
-    res.json(project)
-  } catch (err) {
-    next(err)
+router.get(
+  '/:id',
+  checkRole(roles.map((i) => i.name)),
+  async (req, res, next) => {
+    try {
+      const project = await Project.findByPk(req.params.id)
+      if (!project)
+        res
+          .status(404)
+          .json({ message: `Can't find project with id: ${req.params.id}` })
+      res.json(project)
+    } catch (err) {
+      next(err)
+    }
   }
-})
+)
 
 // POST /api/project/
 
-router.post('/', async (req, res, next) => {
+router.post('/', checkRole(['manager', 'admin']), async (req, res, next) => {
+  console.log(req.body)
   try {
     const project = await Project.create({
       projectName: req.body.projectName,
       projectDescription: req.body.projectDescription,
       managerId: req.body.managerId,
+      dueDate: req.body.dueDate,
     })
     res.json({
       message: `Project was created successfully`,
-      projectId: project.id,
+      project,
     })
   } catch (err) {
     next(err)
@@ -52,7 +61,7 @@ router.post('/', async (req, res, next) => {
 
 // PUT /api/project/:id
 
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', checkRole(['manager', 'admin']), async (req, res, next) => {
   try {
     const project = await Project.findByPk(req.params.id)
     if (!project)
@@ -73,23 +82,27 @@ router.put('/:id', async (req, res, next) => {
 
 // DELETE /private/project/:id
 
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const result = await Project.destroy({
-      where: {
-        id: req.params.id,
-      },
-    })
-    if (!result)
-      res
-        .status(404)
-        .json({ message: `Can't find project with id: ${req.params.id}` })
+router.delete(
+  '/:id',
+  checkRole(['manager', 'admin']),
+  async (req, res, next) => {
+    try {
+      const result = await Project.destroy({
+        where: {
+          id: req.params.id,
+        },
+      })
+      if (!result)
+        res
+          .status(404)
+          .json({ message: `Can't find project with id: ${req.params.id}` })
 
-    res.json({ message: `Project was deleted successfully` })
-  } catch (err) {
-    next(err)
+      res.json({ message: `Project was deleted successfully` })
+    } catch (err) {
+      next(err)
+    }
   }
-})
+)
 
 // GET private/project/:id/users/
 
@@ -104,7 +117,7 @@ router.get('/:id/users/', async (req, res, next) => {
         .status(404)
         .json({ message: `Can't find project with id: ${req.params.id}` })
 
-    res.json(project)
+    res.json(project.users)
   } catch (err) {
     next(err)
   }
@@ -123,6 +136,7 @@ router.post('/:projectId/users/:userId', async (req, res, next) => {
         message: `Can't find project with id: ${req.params.projectId}`,
       })
 
+    console.log(project)
     const projectUser = project.users.filter(
       (user) => user.id === Number(req.params.userId)
     )
@@ -139,7 +153,22 @@ router.post('/:projectId/users/:userId', async (req, res, next) => {
       })
 
     await project.addUser(user)
-    res.json({ message: `User was added to project successfully` })
+    res.json({ message: `User was added to project successfully`, user })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.put('/:projectId/users/:userId/', async (req, res, next) => {
+  try {
+    const projectRole = await UserProject.findOne({
+      where: {
+        userId: req.params.userId,
+        projectId: req.params.projectId,
+      },
+    })
+    if (req.body.role) projectRole.update({ role: req.body.role })
+    res.json(projectRole)
   } catch (err) {
     next(err)
   }
