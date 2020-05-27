@@ -128,6 +128,7 @@ router.get('/:id/users/', async (req, res, next) => {
 router.post('/:projectId/users/:userId', async (req, res, next) => {
   try {
     const project = await Project.findByPk(req.params.projectId, {
+      where: { projectId: req.params.projectId },
       include: [{ model: User }],
     })
 
@@ -136,7 +137,6 @@ router.post('/:projectId/users/:userId', async (req, res, next) => {
         message: `Can't find project with id: ${req.params.projectId}`,
       })
 
-    console.log(project)
     const projectUser = project.users.filter(
       (user) => user.id === Number(req.params.userId)
     )
@@ -153,7 +153,24 @@ router.post('/:projectId/users/:userId', async (req, res, next) => {
       })
 
     await project.addUser(user)
-    res.json({ message: `User was added to project successfully`, user })
+
+    await UserProject.update(
+      { role: 'NoRole' },
+      {
+        where: {
+          projectId: req.params.projectId,
+          userId: req.params.userId,
+        },
+      }
+    )
+
+    const updatedUser = user.dataValues
+    updatedUser.user_project = { role: 'NoRole' }
+    console.log(updatedUser)
+    res.json({
+      message: `User was added to project successfully`,
+      user: updatedUser,
+    })
   } catch (err) {
     next(err)
   }
@@ -203,6 +220,7 @@ router.delete('/:projectId/users/:userId/', async (req, res, next) => {
 
     res.json({
       message: `User was deleted form project successfully`,
+      userId: req.params.userId,
     })
   } catch (err) {
     next(err)
