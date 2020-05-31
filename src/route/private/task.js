@@ -37,25 +37,16 @@ router.get('/:id', (req, res, next) => {
 
 // POST /private/task/
 
-router.post('/', (req, res, next) => {
-  const task = Task.build({
-    taskName: req.body.taskName,
-    taskContent: req.body.taskContent,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    projectId: req.body.projectId,
-    sprint: req.body.sprint,
-    ownerId: req.body.ownerId,
-    TaskColumnId: req.body.TaskColumnId,
-  })
-  task
-    .save()
-    .then((result) => {
-      res.json({ message: `Task was created successfully`, task: result })
-    })
-    .catch((err) => {
-      next(err)
-    })
+router.post('/', async (req, res, next) => {
+  try {
+    const task = await Task.create(req.body)
+
+    if (!task)
+      return res.status(400).json({ error: true, message: `Can't create task` })
+    res.json({ message: `Task was created successfully`, task })
+  } catch (err) {
+    next(err)
+  }
 })
 
 // PUT /private/task/:id
@@ -248,5 +239,28 @@ router.post('/project/:projectId/column', async (req, res, next) => {
     next(err)
   }
 })
+
+router.delete(
+  '/project/:projectId/column/:columnId',
+  async (req, res, next) => {
+    try {
+      const column = await TaskColumn.destroy({
+        where: {
+          projectId: req.params.projectId,
+          id: req.params.columnId,
+        },
+      })
+
+      if (!column)
+        return res
+          .status(400)
+          .json({ error: true, message: `Can't delete column` })
+
+      return res.json({ message: `Column was successfully deleted` })
+    } catch (err) {
+      next(err)
+    }
+  }
+)
 
 module.exports = router

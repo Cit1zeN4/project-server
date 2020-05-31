@@ -10,7 +10,7 @@ const TaskColumn = db.define('task_column', {
   },
 })
 
-TaskColumn.hasMany(Task)
+TaskColumn.hasMany(Task, { onDelete: 'CASCADE' })
 Task.belongsTo(TaskColumn)
 
 Project.hasMany(TaskColumn)
