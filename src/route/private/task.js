@@ -1,5 +1,6 @@
 const express = require('express')
 const Task = require('../../model/Task')
+const TaskColumn = require('../../model/TaskColumn')
 const User = require('../../model/User')
 
 const router = express.Router()
@@ -9,8 +10,8 @@ const router = express.Router()
 router.get('/', (req, res, next) => {
   Task.findAll()
     .then((tasks) => {
-      if (tasks.length !== 0) res.json(tasks)
-      else res.status(404).json({ message: `Can't find tasks` })
+      res.json(tasks)
+      return res.status(404).json({ message: `Can't find tasks` })
     })
     .catch((err) => {
       next(err)
@@ -43,7 +44,9 @@ router.post('/', (req, res, next) => {
     startDate: req.body.startDate,
     endDate: req.body.endDate,
     projectId: req.body.projectId,
+    sprint: req.body.sprint,
     ownerId: req.body.ownerId,
+    TaskColumnId: req.body.TaskColumnId,
   })
   task
     .save()
@@ -192,6 +195,58 @@ router.delete('/:taskId/users/:userId', (req, res, next) => {
     .catch((err) => {
       next(err)
     })
+})
+
+router.get('/project/:projectId', async (req, res, next) => {
+  try {
+    const tasks = await TaskColumn.findAll({
+      order: [['id', 'ASC']],
+      where: {
+        projectId: req.params.projectId,
+      },
+      include: [
+        {
+          model: Task,
+          include: [
+            {
+              model: User,
+              as: 'owner',
+              attributes: {
+                exclude: ['password'],
+              },
+            },
+            {
+              model: User,
+              through: { as: 'users' },
+              attributes: {
+                exclude: ['password'],
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    if (!tasks.length)
+      res.status(404).json({ error: true, message: `Can't find Tasks` })
+
+    res.json(tasks)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/project/:projectId/column', async (req, res, next) => {
+  try {
+    const column = await TaskColumn.create({
+      name: req.body.name,
+      projectId: req.params.projectId,
+    })
+
+    return res.json(column)
+  } catch (err) {
+    next(err)
+  }
 })
 
 module.exports = router

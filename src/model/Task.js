@@ -10,7 +10,7 @@ const Task = db.define('task', {
     allowNull: false,
   },
   taskContent: {
-    type: Sequelize.STRING,
+    type: Sequelize.TEXT,
     allowNull: true,
   },
   startDate: {
@@ -19,6 +19,10 @@ const Task = db.define('task', {
   },
   endDate: {
     type: Sequelize.DATEONLY,
+    allowNull: true,
+  },
+  sprint: {
+    type: Sequelize.INTEGER,
     allowNull: true,
   },
 })

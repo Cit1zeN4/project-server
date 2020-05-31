@@ -28,6 +28,4 @@ Project.belongsToMany(File, { through: 'project_files' })
 User.belongsToMany(Project, { through: ProjectUser })
 Project.belongsToMany(User, { through: ProjectUser })
 
-Task.belongsTo(Project)
-
 module.exports = Project
