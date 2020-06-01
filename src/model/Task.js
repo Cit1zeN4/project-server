@@ -28,7 +28,8 @@ const Task = db.define('task', {
 })
 
 Task.belongsTo(User, { as: 'owner' })
-User.belongsToMany(Task, { through: 'task_user' })
-Task.belongsToMany(User, { through: 'task_user' })
+
+Task.belongsTo(User, { as: 'user' })
+User.hasMany(Task)
 
 module.exports = Task

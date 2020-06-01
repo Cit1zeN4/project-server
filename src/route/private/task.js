@@ -50,6 +50,7 @@ router.post('/', async (req, res, next) => {
       },
       include: [
         { model: User, as: 'owner', attributes: { exclude: ['password'] } },
+        { model: User, as: 'user', attributes: { exclude: ['password'] } },
       ],
     })
 
@@ -223,7 +224,7 @@ router.get('/project/:projectId', async (req, res, next) => {
             },
             {
               model: User,
-              through: { as: 'users' },
+              as: 'user',
               attributes: {
                 exclude: ['password'],
               },
