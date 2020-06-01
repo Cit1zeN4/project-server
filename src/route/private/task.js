@@ -43,7 +43,22 @@ router.post('/', async (req, res, next) => {
 
     if (!task)
       return res.status(400).json({ error: true, message: `Can't create task` })
-    res.json({ message: `Task was created successfully`, task })
+
+    const taskWithInfo = await Task.findOne({
+      where: {
+        id: task.id,
+      },
+      include: [
+        { model: User, as: 'owner', attributes: { exclude: ['password'] } },
+      ],
+    })
+
+    if (!taskWithInfo)
+      return res
+        .status(400)
+        .json({ error: true, message: `Can't get additional info` })
+
+    res.json({ message: `Task was created successfully`, task: taskWithInfo })
   } catch (err) {
     next(err)
   }
