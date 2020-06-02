@@ -132,4 +132,37 @@ router.put(
   }
 )
 
+router.get('/:id/tasks', async (req, res, next) => {
+  try {
+    const user = await User.findOne({ where: { id: req.params.id } })
+    const tasks = await user.getTasks()
+    if (!tasks.length)
+      return res
+        .status(400)
+        .json({ error: true, message: `Can't find user tasks` })
+
+    return res.json(tasks)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/:id/projects', async (req, res, next) => {
+  try {
+    const user = await User.findOne({ where: { id: req.params.id } })
+    const projects = await user.getProjects({
+      attributes: { exclude: ['projectDescription'] },
+    })
+
+    if (!projects.length)
+      return res
+        .status(400)
+        .json({ error: true, message: `Can't find user projects` })
+
+    return res.json(projects)
+  } catch (err) {
+    next(err)
+  }
+})
+
 module.exports = router
