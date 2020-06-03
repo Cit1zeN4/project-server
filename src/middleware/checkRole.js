@@ -6,7 +6,7 @@ module.exports = (roles) => {
     console.log(req.decoded)
     if (!roles.some((r) => req.decoded.role === r))
       return res
-        .status(400)
+        .status(423)
         .json({ error: 'PermissionError', message: 'insufficient permissions' })
 
     next()

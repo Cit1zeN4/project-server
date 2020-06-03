@@ -16,13 +16,13 @@ const Project = db.define('project', {
   },
   dueDate: {
     type: Sequelize.DATE,
-    allowNull: false,
+    allowNull: true,
   },
 })
 
 Project.belongsTo(User, { as: 'manager' })
 
-File.belongsToMany(Project, { through: 'project_files' })
+File.belongsToMany(Project, { through: 'project_files', onDelete: 'CASCADE' })
 Project.belongsToMany(File, { through: 'project_files' })
 
 User.belongsToMany(Project, { through: ProjectUser })

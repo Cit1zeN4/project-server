@@ -28,11 +28,19 @@ router.get(
   checkRole(roles.map((i) => i.name)),
   async (req, res, next) => {
     try {
-      const project = await Project.findByPk(req.params.id)
+      const project = await Project.findByPk(req.params.id, { include: [User] })
       if (!project)
         return res
           .status(404)
           .json({ message: `Can't find project with id: ${req.params.id}` })
+
+      if (
+        req.decoded.id !== project.managerId &&
+        project.users.every(
+          (u) => u.id !== req.decoded && req.decoded.role !== 'admin'
+        )
+      )
+        return res.status(423).json({ error: true, message: `Access denied` })
 
       return res.json(project)
     } catch (err) {
@@ -53,7 +61,7 @@ router.post('/', checkRole(['manager', 'admin']), async (req, res, next) => {
     })
 
     const columns = await taskColumnDefault(project.id)
-
+    console.log(`Columns ${columns}`)
     return res.json({
       message: `Project was created successfully`,
       project,

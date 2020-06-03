@@ -32,24 +32,21 @@ module.exports.roleDefault = async () => {
 module.exports.taskColumnDefault = async (projectId) => {
   let transaction
   try {
-    const taskColumn = await TaskColumn.findAll()
     const actions = []
 
-    if (!taskColumn.length) {
-      transaction = await db.transaction()
+    transaction = await db.transaction()
 
-      actions.push(
-        TaskColumn.create({ name: 'Not Started', projectId }, transaction)
-      )
-      actions.push(
-        TaskColumn.create({ name: 'In Progress', projectId }, transaction)
-      )
-      actions.push(TaskColumn.create({ name: 'Done', projectId }, transaction))
-      actions.push(transaction.commit())
+    actions.push(
+      TaskColumn.create({ name: 'Not Started', projectId }, transaction)
+    )
+    actions.push(
+      TaskColumn.create({ name: 'In Progress', projectId }, transaction)
+    )
+    actions.push(TaskColumn.create({ name: 'Done', projectId }, transaction))
+    actions.push(transaction.commit())
 
-      await Promise.all(actions)
-      console.log('Added default values in task_column table')
-    }
+    await Promise.all(actions)
+    console.log('Added default values in task_column table')
   } catch (err) {
     console.log(err)
     if (transaction) await transaction.rollback()
