@@ -37,7 +37,7 @@ router.get(
       if (
         req.decoded.id !== project.managerId &&
         project.users.every(
-          (u) => u.id !== req.decoded && req.decoded.role !== 'admin'
+          (u) => u.id !== req.decoded.id && req.decoded.role !== 'admin'
         )
       )
         return res.status(423).json({ error: true, message: `Access denied` })

@@ -14,7 +14,7 @@ router.get(
   checkRole(['user', 'admin', 'manager']),
   async (req, res, next) => {
     try {
-      const users = await User.findAll()
+      const users = await User.findAll({ include: [Role] })
       if (users.length === 0)
         res.status(404).json({ message: `Can't find users` })
       res.json(users)
@@ -47,7 +47,7 @@ router.get(
 // POST /private/users/
 // TODO: the handler needs refactoring
 
-router.post('/', checkRole(['admin']), (req, res, next) => {
+router.post('/', checkRole(['admin']), async (req, res, next) => {
   Role.findByPk(req.body.roleId)
     .then((role) => {
       if (role === null)
@@ -70,7 +70,14 @@ router.post('/', checkRole(['admin']), (req, res, next) => {
         .then((user) => {
           res.json({
             message: 'User was added successfully',
-            user: user.id,
+            user: {
+              firstName: user.firstName,
+              surname: user.surname,
+              middleName: user.middleName,
+              email: user.email,
+              photoLink: user.photoLink,
+              roleId: user.roleId,
+            },
           })
         })
         .catch((err) => {
