@@ -1,7 +1,6 @@
 const Sequelize = require('sequelize')
 const db = require('../db/database')
 const Role = require('./Role')
-const AdditionalContact = require('./AdditionalContact')
 
 const User = db.define('user', {
   firstName: {
@@ -32,7 +31,5 @@ const User = db.define('user', {
 })
 
 User.belongsTo(Role)
-User.belongsToMany(AdditionalContact, { through: 'user_additionalContact' })
-AdditionalContact.belongsToMany(User, { through: 'user_additionalContact' })
 
 module.exports = User
