@@ -155,15 +155,7 @@ router.post('/', async (req, res, next) => {
       if (err) {
         refreshTokenHandler(req, res, next, 'User was authenticated')
       } else {
-        User.findOne({
-          where: { id: decoded.id },
-          attributes: { exclude: ['password'] },
-        }).then((user) => {
-          res.json({
-            message: `User was authenticated`,
-            user: userHandler(user),
-          })
-        })
+        refreshTokenHandler(req, res, next, 'User was authenticated')
       }
     })
   } catch (err) {
