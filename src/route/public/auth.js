@@ -5,14 +5,17 @@ const { v4: uuidv4 } = require('uuid')
 const Validator = require('../../model/Validator')
 const User = require('../../model/User')
 const Session = require('../../model/Session')
+const refreshTokenHandler = require('../../script/refreshToken')
+const rolesConfig = require('../../config/rolesConfig')
+const { userHandler, response } = require('../../script/baseUserResponse')
 
 const router = express.Router()
 
 // POST api/auth/signup
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req, res, next) => {
   try {
-    const validate = Validator.signup.validate(req.body)
+    const validate = Validator.signup().validate(req.body)
 
     // Validating data
     if (validate.error)
@@ -36,14 +39,17 @@ router.post('/signup', async (req, res) => {
 
     const newUser = await User.create({
       firstName: req.body.firstName,
-      surname: req.body.firstName,
+      surname: req.body.surname,
       email: req.body.email,
       password: hash,
-      roleId: 1,
+      roleId: rolesConfig.find((role) => role.name === 'user').id,
     })
 
     // Creating JWT
-    const payload = { id: user.id }
+    const payload = {
+      id: newUser.id,
+      role: rolesConfig.find((role) => role.name === 'user').name,
+    }
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '15m',
     })
@@ -58,27 +64,26 @@ router.post('/signup', async (req, res) => {
     await Session.create({
       userId: newUser.id,
       expiresIn: sessionExp,
-      fingerprint: 'fingerprint',
+      fingerprint: req.fingerprint.hash,
       refreshToken,
     })
 
-    res
-      .cookie('refreshToken', refreshToken, {
-        maxAge: process.env.SESSION_MAX_AGE,
-        httpOnly: true,
-        path: '/api/auth/',
-      })
-      .json({ message: 'Signed Up', token })
+    response(
+      res,
+      { access: token, refresh: refreshToken },
+      'Signed Up',
+      newUser
+    )
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
+    next(err)
   }
 })
 
 // POST api/auth/login
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
-    const validate = Validator.login.validate(req.body)
+    const validate = Validator.login().validate(req.body)
 
     // Validating data
     if (validate.error)
@@ -104,7 +109,10 @@ router.post('/login', async (req, res) => {
         .json({ error: true, message: `Incorrect email or password` })
 
     // Creating JWT
-    const payload = { id: user.id }
+    const payload = {
+      id: user.id,
+      role: rolesConfig.find((role) => role.id === user.roleId).name,
+    }
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '15m',
     })
@@ -126,80 +134,64 @@ router.post('/login', async (req, res) => {
     await Session.create({
       userId: user.id,
       expiresIn: sessionExp,
-      fingerprint: 'fingerprint',
+      fingerprint: req.fingerprint.hash,
       refreshToken,
     })
 
+    response(res, { access: token, refresh: refreshToken }, 'Logged in', user)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/', async (req, res, next) => {
+  const { refreshToken, accessToken } = req.cookies
+
+  try {
+    if (!accessToken && !refreshToken)
+      res.status(400).json({ error: true, message: `No tokens provided` })
+
+    jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        refreshTokenHandler(req, res, next, 'User was authenticated')
+      } else {
+        refreshTokenHandler(req, res, next, 'User was authenticated')
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/logout', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies
+    if (!refreshToken)
+      res.status(400).json({
+        error: 'NoTokenProvided',
+        message: 'No refresh token provided',
+      })
+
+    await Session.destroy({
+      where: {
+        refreshToken,
+      },
+    })
+
     res
-      .cookie('refreshToken', refreshToken, {
+      .clearCookie('accessToken', {
+        maxAge: 900000,
+        httpOnly: true,
+        path: '/api',
+      })
+      .clearCookie('refreshToken', {
         maxAge: process.env.SESSION_MAX_AGE,
         httpOnly: true,
         path: '/api/auth/',
       })
-      .json({ message: 'Logged in', token })
+      .json({ message: `Log out` })
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
-  }
-})
-
-router.post('/refresh-tokens', async (req, res) => {
-  try {
-    const { fingerprint } = req.body
-    if (!fingerprint)
-      res.status(400).json({ error: true, message: `No fingerprint provided` })
-
-    const { refreshToken } = req.cookies
-    if (!refreshToken)
-      res
-        .status(400)
-        .json({ error: true, message: `No refresh token provided` })
-
-    const session = await Session.findOne({
-      where: {
-        refreshToken: refreshToken,
-      },
-    })
-
-    if (!session)
-      res.status(400).json({ error: true, message: `Can't find session` })
-    else {
-      await session.destroy()
-
-      if (session.fingerprint !== fingerprint)
-        res.status(400).json({ error: true, message: `Incorrect finger print` })
-
-      if (session.expiresIn < Date.now())
-        res.status(400).json({ error: true, message: `Refresh token expired` })
-
-      // Creating a session end date
-      // SESSION_MAX_AGE - the maximum duration of the session
-      // For example 5184000000 - 2 months in milliseconds
-      const sessionExp = Date.now() + Number(process.env.SESSION_MAX_AGE)
-      const newRefreshToken = uuidv4()
-
-      await Session.create({
-        userId: session.userId,
-        expiresIn: sessionExp,
-        fingerprint: 'fingerprint',
-        refreshToken: newRefreshToken,
-      })
-
-      // Creating JWT
-      const payload = { id: session.userId }
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: '15m',
-      })
-
-      res
-        .cookie('refreshToken', refreshToken, {
-          maxAge: process.env.SESSION_MAX_AGE,
-          httpOnly: true,
-          path: '/api/auth/',
-        })
-        .json({ message: 'Token was successfully refreshed', token })
-    }
-  } catch (err) {
-    res.status(500).json({ error: true, message: err.message })
+    next(err)
   }
 })
 

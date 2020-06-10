@@ -10,7 +10,7 @@ const Task = db.define('task', {
     allowNull: false,
   },
   taskContent: {
-    type: Sequelize.STRING,
+    type: Sequelize.TEXT,
     allowNull: true,
   },
   startDate: {
@@ -21,10 +21,15 @@ const Task = db.define('task', {
     type: Sequelize.DATEONLY,
     allowNull: true,
   },
+  sprint: {
+    type: Sequelize.INTEGER,
+    allowNull: true,
+  },
 })
 
 Task.belongsTo(User, { as: 'owner' })
-User.belongsToMany(Task, { through: 'task_user' })
-Task.belongsToMany(User, { through: 'task_user' })
+
+Task.belongsTo(User, { as: 'user' })
+User.hasMany(Task)
 
 module.exports = Task

@@ -14,16 +14,18 @@ const Project = db.define('project', {
     type: Sequelize.TEXT,
     allowNull: true,
   },
+  dueDate: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
 })
 
 Project.belongsTo(User, { as: 'manager' })
 
-File.belongsToMany(Project, { through: 'project_files' })
+File.belongsToMany(Project, { through: 'project_files', onDelete: 'CASCADE' })
 Project.belongsToMany(File, { through: 'project_files' })
 
 User.belongsToMany(Project, { through: ProjectUser })
 Project.belongsToMany(User, { through: ProjectUser })
-
-Task.belongsTo(Project)
 
 module.exports = Project

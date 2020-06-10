@@ -2,43 +2,52 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const User = require('../../model/User')
 const Role = require('../../model/Role')
+const checkRole = require('../../middleware/checkRole')
+const Project = require('../../model/Project')
 
 const router = express.Router()
 
 // GET /private/users/
 
-router.get('/', async (req, res, next) => {
-  try {
-    const users = await User.findAll()
-    if (users.length === 0)
-      res.status(404).json({ message: `Can't find users` })
-    res.json(users)
-  } catch (err) {
-    // res.status(500).json(err)
-    next(err)
+router.get(
+  '/',
+  checkRole(['user', 'admin', 'manager']),
+  async (req, res, next) => {
+    try {
+      const users = await User.findAll({ include: [Role] })
+      if (users.length === 0)
+        res.status(404).json({ message: `Can't find users` })
+      res.json(users)
+    } catch (err) {
+      next(err)
+    }
   }
-})
+)
 
 // GET /private/users/:id
 
-router.get('/:id', (req, res) => {
-  User.findByPk(req.params.id)
-    .then((user) => {
-      if (user === null)
-        res
-          .status(404)
-          .json({ message: `Can't find user with id: ${req.params.id}` })
-      res.status(200).json(user)
-    })
-    .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
-    })
-})
+router.get(
+  '/:id',
+  checkRole(['user', 'admin', 'manager']),
+  (req, res, next) => {
+    User.findByPk(req.params.id)
+      .then((user) => {
+        if (user === null)
+          res
+            .status(404)
+            .json({ message: `Can't find user with id: ${req.params.id}` })
+        res.status(200).json(user)
+      })
+      .catch((err) => {
+        next(err)
+      })
+  }
+)
 
 // POST /private/users/
 // TODO: the handler needs refactoring
 
-router.post('/', (req, res) => {
+router.post('/', checkRole(['admin']), async (req, res, next) => {
   Role.findByPk(req.body.roleId)
     .then((role) => {
       if (role === null)
@@ -61,21 +70,28 @@ router.post('/', (req, res) => {
         .then((user) => {
           res.json({
             message: 'User was added successfully',
-            user: user.id,
+            user: {
+              firstName: user.firstName,
+              surname: user.surname,
+              middleName: user.middleName,
+              email: user.email,
+              photoLink: user.photoLink,
+              roleId: user.roleId,
+            },
           })
         })
         .catch((err) => {
-          res.status(500).json({ error: err.name, message: err.message })
+          next(err)
         })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // DELETE /private/users/:id
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', checkRole(['admin']), (req, res, next) => {
   User.destroy({
     where: {
       id: req.params.id,
@@ -89,27 +105,47 @@ router.delete('/:id', (req, res) => {
           .json({ message: `Can't find user with id: ${req.params.id}` })
     })
     .catch((err) => {
-      res.status(500).json({ error: err.name, message: err.message })
+      next(err)
     })
 })
 
 // PUT /private/users/:id
 
-router.put('/:id', (req, res) => {
-  User.findByPk(req.params.id).then((user) => {
-    if (user === null)
-      res
-        .status(404)
-        .json({ message: `Can't find user with id: ${req.params.id}` })
-    user
-      .update(req.body)
-      .then((result) => {
-        res.json({ message: `User was updated successfully`, user: result })
-      })
-      .catch((err) => {
-        res.status(500).json({ error: err.name, message: err.message })
-      })
-  })
-})
+router.put(
+  '/:id',
+  checkRole(['user', 'admin', 'manager']),
+  (req, res, next) => {
+    console.log(`${req.decoded.id} - ${req.params.id}`)
+    if (['user', 'manager'].some((role) => role === req.decoded.role))
+      if (Number(req.decoded.id) !== Number(req.params.id)) {
+        res.status(423).json({
+          error: 'PermissionError',
+          message: `User with role: ${req.decoded.role} don't have permission`,
+        })
+      }
+
+    User.findByPk(req.params.id).then((user) => {
+      if (user === null)
+        res
+          .status(404)
+          .json({ message: `Can't find user with id: ${req.params.id}` })
+          .end()
+
+      user
+        .update(req.body)
+        .then((result) => {
+          const updatedUser = result
+          updatedUser.password = undefined
+          res.json({
+            message: `User was updated successfully`,
+            user: updatedUser,
+          })
+        })
+        .catch((err) => {
+          next(err)
+        })
+    })
+  }
+)
 
 module.exports = router

@@ -1,11 +1,7 @@
 const jwt = require('jsonwebtoken')
 
 module.exports = (req, res, next) => {
-  const token =
-    req.body.token ||
-    req.query.token ||
-    req.header('Access-token') ||
-    req.cookies.accessToken
+  const token = req.cookies.accessToken
   if (token) {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err)
