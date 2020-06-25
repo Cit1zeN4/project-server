@@ -27,6 +27,7 @@ const User = db.define('user', {
   photoLink: {
     type: Sequelize.STRING,
     allowNull: true,
+    defaultValue: `http://${process.env.HOST}:${process.env.PORT}/public/files/img/profile.png`,
   },
 })
 

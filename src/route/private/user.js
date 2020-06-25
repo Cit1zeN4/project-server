@@ -71,6 +71,7 @@ router.post('/', checkRole(['admin']), async (req, res, next) => {
           res.json({
             message: 'User was added successfully',
             user: {
+              id: user.id,
               firstName: user.firstName,
               surname: user.surname,
               middleName: user.middleName,
